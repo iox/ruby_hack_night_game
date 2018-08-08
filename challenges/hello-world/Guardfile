@@ -1,0 +1,13 @@
+group :red_green_refactor, halt_on_fail: true do
+  guard :minitest, cli: " | tee ../tmp/test_results.txt" do
+    watch(/(.*)/) { 'test' }
+  end
+  
+  guard :rubocop, all_on_start: false, cli: " --format simple --format quiet -o ../tmp/rubocop_results.txt" do
+    watch(%r{.+\.rb$})
+    watch(%r{(?:.+/)?\.rubocop(?:_todo)?\.yml$}) { |m| File.dirname(m[0]) }
+  end
+  
+  notification :off
+  clearing :on
+end
