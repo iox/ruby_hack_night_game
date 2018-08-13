@@ -15,7 +15,7 @@ game = Game.new(teams: ARGV[0].split(","))
 
 for team in game.teams
   dashboard += "Team #{team.number}".ljust(10)
-  dashboard += team.rspec_result.ljust(25).colorize(team.rspec_color)
+  dashboard += team.tests_result.ljust(25).colorize(team.tests_color)
   dashboard += team.rubocop_result.ljust(26).colorize(team.rubocop_color)
   dashboard += team.time_result.ljust(25).colorize(:white)
   dashboard += team.total_points.green

@@ -27,6 +27,14 @@ for number in team_numbers.split(",")
   `cp -pr challenges/#{challenge} #{path}/`
   `cp #{path}/#{challenge}/tmp/total_examples.txt #{path}/tmp`  
 
+  # Prepare the run.sh script
+  `echo "cd /workspace/#{challenge} && bundle exec rspec --format progress --format json --out ../tmp/test_results.txt && bundle exec rubocop --format simple --format quiet -o ../tmp/rubocop_results.txt" > #{path}/run.sh`
+
+  # Prepare the cloud9 settings
+  `mkdir #{path}/.c9/`
+  `cp project.settings #{path}/.c9/`
+  `cp state.settings #{path}/.c9/`
+
   # Restart docker instance
   `docker run -it -d -p 1000#{number}:80 -p 1030#{number}:3000 -v /root/cphrb/team#{number}/:/workspace/ --name cphrb_team#{number} cphrb:latest`
   `docker restart cphrb_team#{number}`

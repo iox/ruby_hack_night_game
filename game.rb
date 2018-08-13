@@ -4,9 +4,9 @@ class Team
   def initialize(number:)
     @number = number
     begin
-      @rspec_total = File.read("#{path}/tmp/total_examples.txt").to_i
+      @total_number_of_tests = File.read("#{path}/tmp/total_examples.txt").to_i
     rescue
-      @rspec_total = 1000
+      @total_number_of_tests = 1000
     end
   end
 
@@ -39,7 +39,7 @@ class Team
   end
   
   def rubocop_number_of_alerts
-    if rspec_percentage == 100 && File.exists?("#{path}/tmp/rubocop_results.txt")
+    if tests_percentage > 99 && File.exists?("#{path}/tmp/rubocop_results.txt")
       `cat #{path}/tmp/rubocop_results.txt | grep offense`.split(" ")[3].to_i
     else
       -1
@@ -60,7 +60,7 @@ class Team
   
   def time_points
     return 0 if time_seconds.nil?
-    return 0 if rspec_passed < 1
+    return 0 if number_of_passed_tests < 1
     
     passed_minutes = time_seconds / 60
     if passed_minutes < 10
@@ -88,34 +88,41 @@ class Team
     rspec_json["summary"]
   end
   
-  def rspec_passed
-    rspec_summary["example_count"] - rspec_summary["failure_count"] - rspec_summary["pending_count"]
-  end
-  
-  def rspec_total
-    @rspec_total
-  end
-  
-  def rspec_percentage
-    rspec_passed * 100 / rspec_total
-  end
-  
-  def rspec_points
-    20*rspec_percentage/100
-  end
-  
-  def rspec_result
-    if File.exists?("#{path}/tmp/test_results.txt")
-      "#{rspec_passed}/#{rspec_total} (#{rspec_percentage}%): #{rspec_points} points"
+  def number_of_passed_tests
+    # Minitest outputs plain text
+    if File.exists?("#{path}/tmp/test_results.txt") && File.readlines("#{path}/tmp/test_results.txt").grep(/assertions/).any?
+      splitted = `cat #{path}/tmp/test_results.txt | grep assertions,`.split(" ")
+      splitted[2].to_i - splitted[4].to_i - splitted[6].to_i
+    # Rspec outputs a JSON file
     else
-      "NOT RUN YET: #{rspec_points} points"
+      rspec_summary["example_count"] - rspec_summary["failure_count"] - rspec_summary["pending_count"]
     end
   end
   
-  def rspec_color
+  def total_number_of_tests
+    @total_number_of_tests
+  end
+  
+  def tests_percentage
+    number_of_passed_tests * 100 / total_number_of_tests
+  end
+  
+  def tests_points
+    20*tests_percentage/100
+  end
+
+  def tests_result
+    if File.exists?("#{path}/tmp/test_results.txt")
+      "#{number_of_passed_tests}/#{total_number_of_tests} (#{tests_percentage}%): #{tests_points} points"
+    else
+      "NOT RUN YET: #{tests_points} points"
+    end
+  end
+  
+  def tests_color
     if !File.exists?("#{path}/tmp/test_results.txt")
       :cyan
-    elsif rspec_percentage == 100
+    elsif tests_percentage > 99
       :green
     else
       :yellow
@@ -127,7 +134,7 @@ class Team
   end
   
   def total_points
-    "  #{(rspec_points + rubocop_points + time_points).to_s.rjust(2, '0')} points  "
+    "  #{(tests_points + rubocop_points + time_points).to_s.rjust(2, '0')} points  "
   end
     
 end
